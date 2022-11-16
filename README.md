@@ -36,11 +36,11 @@ The framework is designed for easy customization and extension of its functional
 ## Installation
 
 ```bash
-python -m pip install git+https://github.com/JakRys/clustfin
+python -m pip install git+https://github.com/JakRys/finclust
 ```
 or (not yet available):
 ```bash
-pip install clustfin
+pip install finclust
 ```
 
 ## Features
