@@ -22,9 +22,6 @@ class Evaluator:
     TODO
     """
 
-    def __init__(self, plotting_backend: str = None) -> None:
-        self.plotting_backend = plotting_backend
-
     @abc.abstractmethod
     def evaluate(self, returns: pd.DataFrame) -> pd.DataFrame:
         """
@@ -38,9 +35,7 @@ class QuantstatsEvaluator(Evaluator):
     def __init__(self, benchmark=None, rf=0., display=False,
             mode='basic', sep=False, compounded=True,
             periods_per_year=252, prepare_returns=True,
-            match_dates=False, kwargs = {},
-            plotting_backend: str = None):
-        super().__init__(plotting_backend=plotting_backend)
+            match_dates=False, kwargs = {}):
         self.benchmark = benchmark
         self.rf = rf
         self.display = display
