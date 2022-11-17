@@ -127,7 +127,7 @@ class PortfolioManager:
 
     def _get_portfolio_returns(self, label: int) -> pd.Series:
         equality = (self.clusters == label)
-        return self.returns.where(equality, 0).sum(axis=1) / self.clusters.apply(pd.value_counts, axis=1)[label]
+        return (self.returns.where(equality, 0).sum(axis=1) / self.clusters.apply(pd.value_counts, axis=1)[label]).fillna(0)
 
 
     def _calculate_metrics(self, returns: pd.DataFrame) -> pd.DataFrame:
