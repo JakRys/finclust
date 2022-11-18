@@ -55,11 +55,28 @@ It is simple to use this package. After the import, you need to do three steps:
 3. Create **visualizations**.
 
 ```python
-from sklearn.pipeline import Pipeline
+## Import the required modules
+from datetime import timedelta
+import numpy as np
 
-from finclust.??? import TODO
+from finclust import PortfolioManager
+from finclust.clustering import ScikitClusterer
+from finclust.evaluation import QuantstatsEvaluator
 
+from sklearn.cluster import AgglomerativeClustering
 
+## Create instance of PortfolioManager
+mgr = PortfolioManager(
+    window = timedelta(weeks=16),
+    step = timedelta(weeks=4),
+    similarity_func = np.corrcoef,
+    clusterer = ScikitClusterer(
+        cluster_method = AgglomerativeClustering(affinity="precomputed", linkage="single", n_clusters=5),
+    ),
+    evaluator = QuantstatsEvaluator(),
+)
+## Run the process
+mgr.run(data=data)
 ```
 See the [examples folder](examples) for more details.
 
