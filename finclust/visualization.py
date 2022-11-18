@@ -6,7 +6,6 @@ Visualization module
 import abc
 from typing import Union
 import quantstats as qs
-import pandas as pd
 from . import PortfolioManager
 
 
@@ -36,10 +35,11 @@ class CumulativeReturnsVisualizator(Visualizator):
     Object that creates a plot of cumulative returns.
     """
     def __init__(self, plotting_backend: str = None, title: str = "Returns of portfolios",
-                 include_baseline: bool = True) -> None:
+                 include_baseline: bool = True, **kwargs) -> None:
         self.plotting_backend = plotting_backend
         self.title = title
         self.include_baseline = include_baseline
+        self.kwargs = kwargs
 
     def visualize(self, mgr: PortfolioManager):
         """
@@ -52,6 +52,7 @@ class CumulativeReturnsVisualizator(Visualizator):
         return ((1 + returns_).cumprod() - 1).plot(
             backend = self.plotting_backend,
             title = self.title,
+            **self.kwargs,
         )
 
 
