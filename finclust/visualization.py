@@ -4,7 +4,7 @@ Visualization module
 """
 
 import abc
-from typing import Union
+from typing import List, Union
 import quantstats as qs
 from . import PortfolioManager
 
@@ -30,6 +30,36 @@ class Visualizator:
         raise NotImplementedError
 
 
+class SequentialVisualizator(Visualizator):
+    """
+    Wrapper for the visualizators in the list
+
+    Attributes
+    ----------
+    visualizators_list: List[Visualizator]
+        List of visualizators
+    """
+    def __init__(self, visualizators_list: List[Visualizator]) -> None:
+        self.visualizators_list = visualizators_list
+
+    def visualize(self, mgr: PortfolioManager):
+        """
+        Runs the visualize method on all elements.
+        
+        Parameters
+        ----------
+        mgr: PortfolioManager
+            Pass the portfolio manager to the visualizators
+        
+        Returns
+        -------
+            Output of the visualize method of the last element of the visualizators_list
+        """
+        for vis in self.visualizators_list[:-1]:
+            vis.visualize(mgr)
+        return self.visualizators_list[-1].visualize(mgr)
+
+
 class CumulativeReturnsVisualizator(Visualizator):
     """
     Object that creates a plot of cumulative returns.
@@ -45,8 +75,9 @@ class CumulativeReturnsVisualizator(Visualizator):
         """
         Creates a plot of cumulative returns
         """
+        self._check_parameter(mgr=mgr, param="portfolios_returns")
         if self.include_baseline and mgr.baseline_returns is not None:
-            returns_ = mgr.baseline_returns.join(mgr.returns)
+            returns_ = mgr.baseline_returns.join(mgr.portfolios_returns)
         else:
             returns_ = mgr.portfolios_returns
         return ((1 + returns_).cumprod() - 1).plot(
