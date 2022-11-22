@@ -42,12 +42,13 @@ class PortfolioManager:
     """
 
     def __init__(self,
-                 pipeline: Pipeline = None,
                  price_column_name: str = "Close",
                  weights: Dict[str, float] = None,
                  window: timedelta = None,
                  step: timedelta = None,
+                 max_return_limit: float = None,
                  
+                 pipeline: Pipeline = None,
                  similarity_func: callable = None,
                  clusterer: Clusterer = None,
                  evaluator: Evaluator = None,
@@ -59,12 +60,13 @@ class PortfolioManager:
                  evaluate_baseline: bool = True,
                  verbose: bool = True,
                  ):
-        self.pipeline = pipeline
         self.price_column_name = price_column_name
         self.weights = weights
         self.window = window
         self.step = step
+        self.max_return_limit = max_return_limit
 
+        self.pipeline = pipeline
         self.similarity_func = similarity_func
         self.clusterer = clusterer
         self.evaluator = evaluator
@@ -81,12 +83,9 @@ class PortfolioManager:
         self.output_index = None
         self.similarities = None
         self.clusters = None
+        self.baseline_returns = None
         self.baseline_metrics = pd.DataFrame()
         self.portfolios_metrics = None
-
-        ## Check parameters
-        if self.evaluate_baseline and (self.baseline_prices is None):
-            warnings.warn("Parameter `evaluate_baseline` is True; however, `baseline_prices` is not provided.")
         
     
     def _log(self, text) -> None:
@@ -122,12 +121,15 @@ class PortfolioManager:
             prices = data        
         else:
             prices = data[self.price_column_name]
-        return prices.pct_change().replace([np.inf, -np.inf], 0)
+        returns = prices.pct_change().replace([np.inf, -np.inf], 0)
+        if self.max_return_limit is not None:
+            returns[returns > self.max_return_limit] = self.max_return_limit
+        return returns
     
 
-    def _get_portfolio_returns(self, label: int) -> pd.Series:
-        equality = (self.clusters == label)
-        return (self.returns.where(equality, 0).sum(axis=1) / self.clusters.apply(pd.value_counts, axis=1)[label]).fillna(0)
+    def _get_portfolio_returns(self, clusters, label: int) -> pd.Series:
+        equality = (clusters == label)
+        return (self.returns.where(equality, 0).sum(axis=1) / equality.sum(axis=1))
 
 
     def _calculate_metrics(self, returns: pd.DataFrame) -> pd.DataFrame:
@@ -216,22 +218,26 @@ class PortfolioManager:
                 index = self.output_index,
             )).fillna(method="ffill").dropna(axis=0).astype(np.int16)
         
-        if self.evaluate_baseline and (self.baseline_prices is not None) and self.baseline_metrics.empty:
-            ## Evaluate baseline
+        if self.evaluate_baseline:
+            ## Calculate baseline returns
             self._log("Evaluating baseline")
-            baseline_returns = self._calculate_returns(self.baseline_prices)
-            if isinstance(baseline_returns, pd.Series):
-                baseline_returns = baseline_returns.to_frame(name=self.baseline_name)
-            self.baseline_metrics = self._calculate_metrics(returns=baseline_returns)
-        else:
-            baseline_returns = None
+            if self.baseline_prices is not None:
+                self.baseline_returns = self._calculate_returns(self.baseline_prices)
+            else:
+                ones = (~self.returns.isna()).astype(int)
+                self.baseline_returns = self._get_portfolio_returns(clusters=ones, label=1)
+            if isinstance(self.baseline_returns, pd.Series):
+                self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
+        if self.evaluate_baseline and (self.baseline_returns is not None) and self.baseline_metrics.empty:
+            ## Evaluate baseline
+            self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
 
         if self.clusters is not None:
             self._log("Calculating returns of portfolios")
             self.portfolios_returns = pd.DataFrame()
             for label in np.unique(self.clusters):
                 col = self.clusterer.name
-                self.portfolios_returns[f"{col}-{label}"] = self._get_portfolio_returns(label)
+                self.portfolios_returns[f"{col}-{label}"] = self._get_portfolio_returns(clusters=self.clusters, label=label)
 
             ## Cutting off the nan-values at the beginning
             new_begin = self.portfolios_returns[:self.portfolios_returns.index[0] + self.window].index[-2]
