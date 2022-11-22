@@ -218,6 +218,9 @@ class PortfolioManager:
                 index = self.output_index,
             )).fillna(method="ffill").dropna(axis=0).astype(np.int16)
         
+        ## Find the beginning of returns
+        new_begin = self.returns[:self.returns.index[0] + self.window].index[-2]
+
         if self.evaluate_baseline:
             ## Calculate baseline returns
             self._log("Evaluating baseline")
@@ -228,6 +231,10 @@ class PortfolioManager:
                 self.baseline_returns = self._get_portfolio_returns(clusters=ones, label=1)
             if isinstance(self.baseline_returns, pd.Series):
                 self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
+            ## Align baseline returns by portfolios
+            self.baseline_returns = self.baseline_returns[new_begin:]
+            ## Set initial returns to 0
+            self.baseline_returns.iloc[0, :] = [0] * self.baseline_returns.shape[1]
         if self.evaluate_baseline and (self.baseline_returns is not None) and self.baseline_metrics.empty:
             ## Evaluate baseline
             self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
@@ -240,7 +247,6 @@ class PortfolioManager:
                 self.portfolios_returns[f"{col}-{label}"] = self._get_portfolio_returns(clusters=self.clusters, label=label)
 
             ## Cutting off the nan-values at the beginning
-            new_begin = self.portfolios_returns[:self.portfolios_returns.index[0] + self.window].index[-2]
             self.portfolios_returns = self.portfolios_returns[new_begin:]
             ## Set initial returns to 0
             self.portfolios_returns.iloc[0, :] = [0] * self.portfolios_returns.shape[1]
