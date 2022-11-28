@@ -2,6 +2,7 @@
 
 [![Open Source? Yes!](https://badgen.net/badge/Open%20Source%20%3F/Yes%21/blue?icon=github)](https://github.com/Naereen/badges/)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![CodeFactor](https://www.codefactor.io/repository/github/jakrys/finclust/badge)](https://www.codefactor.io/repository/github/jakrys/finclust)
 
 _Library for portfolio creation (by clustering) of financial time series with evaluation and visualizations._
 
