@@ -69,7 +69,7 @@ from sklearn.cluster import AgglomerativeClustering
 mgr = PortfolioManager(
     window = timedelta(weeks=16),
     step = timedelta(weeks=4),
-    similarity_func = np.corrcoef,
+    affinity_func = np.corrcoef,
     clusterer = ScikitClusterer(
         cluster_method = AgglomerativeClustering(affinity="precomputed", linkage="single", n_clusters=5),
     ),

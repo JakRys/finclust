@@ -14,7 +14,9 @@ from sklearn.pipeline import Pipeline
 
 from .clustering import Clusterer
 from .evaluation import Evaluator
-from .utils import calculate_similarities, compose_similarities
+from .utils import calculate_affinities, compose_affinities
+
+import copy
 
 
 class PortfolioManager:
@@ -37,8 +39,8 @@ class PortfolioManager:
     returns: pd.DataFrame
         Percentage returns on the asset.
     
-    similarities: List[pd.DataFrame]
-        Square matrix of pairwise similarities or distances.
+    affinities: List[pd.DataFrame]
+        Square matrix of pairwise affinities or distances.
     """
 
     def __init__(self,
@@ -49,7 +51,7 @@ class PortfolioManager:
                  max_return_limit: float = None,
                  
                  pipeline: Pipeline = None,
-                 similarity_func: callable = None,
+                 affinity_func: callable = None,
                  clusterer: Clusterer = None,
                  evaluator: Evaluator = None,
 
@@ -67,7 +69,7 @@ class PortfolioManager:
         self.max_return_limit = max_return_limit
 
         self.pipeline = pipeline
-        self.similarity_func = similarity_func
+        self.affinity_func = affinity_func
         self.clusterer = clusterer
         self.evaluator = evaluator
 
@@ -81,11 +83,55 @@ class PortfolioManager:
         ## Initialize attributes to None
         self.data = None
         self.output_index = None
-        self.similarities = None
+        self.att_affinities = None
+        self.affinities = None
         self.clusters = None
         self.baseline_returns = None
         self.baseline_metrics = pd.DataFrame()
         self.portfolios_metrics = None
+    
+
+    # def __copy__(self):
+    #     warnings.warn("The __copy__ method is not implemented. Instead, the __deepcopy__ method is used.")
+    #     return self.__deepcopy__()
+    
+
+    def copy(self):
+        instance = PortfolioManager(
+            price_column_name = self.price_column_name,
+            weights = self.weights,
+            window = self.window,
+            step = self.step,
+            max_return_limit = self.max_return_limit,
+
+            pipeline = self.pipeline,
+            affinity_func = self.affinity_func,
+            clusterer = self.clusterer,
+            evaluator = self.evaluator,
+
+            returns = self.returns,
+            baseline_prices = self.baseline_prices,
+            baseline_name = self.baseline_name,
+
+            evaluate_baseline = self.evaluate_baseline,
+            verbose = self.verbose,
+        )
+        # instance.data = self.data.copy()
+        # instance.output_index = self.output_index.copy()
+        # instance.affinities = self.affinities.copy()
+        # instance.clusters = self.clusters.copy()
+        # instance.baseline_returns = self.baseline_returns.copy()
+        # instance.baseline_metrics = self.baseline_metrics.copy()
+        # instance.portfolios_metrics = self.portfolios_metrics.copy()
+        instance.data = copy.deepcopy(self.data)
+        instance.output_index = copy.deepcopy(self.output_index)
+        instance.att_affinities = copy.deepcopy(self.att_affinities)
+        instance.affinities = copy.deepcopy(self.affinities)
+        instance.clusters = copy.deepcopy(self.clusters)
+        instance.baseline_returns = copy.deepcopy(self.baseline_returns)
+        instance.baseline_metrics = copy.deepcopy(self.baseline_metrics)
+        instance.portfolios_metrics = copy.deepcopy(self.portfolios_metrics)
+        return instance
         
     
     def _log(self, text) -> None:
@@ -103,7 +149,7 @@ class PortfolioManager:
     
 
     def _check_params(self) -> None:
-        need_data = any([p is not None for p in [self.pipeline, self.similarity_func, self.clusterer]])
+        need_data = any([p is not None for p in [self.pipeline, self.affinity_func, self.clusterer]])
         if need_data and (self.data is None):
             raise ValueError("Data has to be provided.")
 
@@ -189,26 +235,27 @@ class PortfolioManager:
             )
         starts = self.output_index - self.window
         
-        if self.similarity_func is not None:
-            ## Calculate similarities
-            self._log("Calculating similarities")
-            similarities = [calculate_similarities(
+        if (self.affinity_func is not None) and (self.att_affinities is None):
+            ## Calculate affinities
+            self._log("Calculating affinities")
+            self.att_affinities = [calculate_affinities(
                 self.data.loc[start:stop],
-                func = self.similarity_func,
+                func = self.affinity_func,
             ) for start,stop in zip(starts, self.output_index)]
-            
+        
+        if (self.att_affinities is not None) and (self.affinities is None):
             if self.data.columns.nlevels > 1 and len(self.data.columns.levels[0]) > 1:
-                ## Compose similarities
-                self._log("Composing similarities")
-                self.similarities = [compose_similarities(s) for s in similarities]
+                ## Compose affinities
+                self._log("Composing affinities")
+                self.affinities = [compose_affinities(s) for s in self.att_affinities]
             else:
-                self.similarities = similarities
+                self.affinities = self.att_affinities
 
-        if self.clusterer is not None:
+        if (self.clusterer is not None) and (self.clusters is None):
             ## Calculate clusters
             self._log("Calculating clusters")
-            if self.similarities:
-                clusters = [self.clusterer.group(s) for s in self.similarities]
+            if self.affinities:
+                clusters = [self.clusterer.group(s) for s in self.affinities]
             else:
                 clusters = [self.clusterer.group(self.data.loc[start:stop]) for start,stop in zip(starts, self.output_index)]
             self.clusters = pd.DataFrame(
@@ -218,8 +265,9 @@ class PortfolioManager:
                 index = self.output_index,
             )).fillna(method="ffill").dropna(axis=0).astype(np.int16)
         
-        ## Find the beginning of returns
-        new_begin = self.returns[:self.returns.index[0] + self.window].index[-2]
+        if self.returns is not None:
+            ## Find the beginning of returns
+            new_begin = self.returns[:self.returns.index[0] + self.window].index[-2]
 
         if self.evaluate_baseline:
             ## Calculate baseline returns
@@ -235,9 +283,9 @@ class PortfolioManager:
             self.baseline_returns = self.baseline_returns[new_begin:]
             ## Set initial returns to 0
             self.baseline_returns.iloc[0, :] = [0] * self.baseline_returns.shape[1]
-        if self.evaluate_baseline and (self.baseline_returns is not None) and self.baseline_metrics.empty:
-            ## Evaluate baseline
-            self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
+            if (self.evaluator is not None) and (self.baseline_returns is not None) and self.baseline_metrics.empty:
+                ## Evaluate baseline
+                self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
 
         if self.clusters is not None:
             self._log("Calculating returns of portfolios")
