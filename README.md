@@ -26,12 +26,14 @@ _Library for portfolio creation (by clustering) of financial time series with ev
 
 This library aims to simplify the workflow of **portfolio creation and evaluation**. It is primarily focused on financial time series data. It helps with:
 
-- TBA,
-- ...,
+- **data** preprocessing,
+- calculation of **affinities**,
+- **clustering** of assets/portfolio selection,
+- calculation and **evaluation** of portfolios returns,
 - visualizations.
 
 
-The framework is designed for easy customization and extension of its functionality.
+The framework is designed for **easy customization** and extension of its functionality.
 
 
 ## Installation
