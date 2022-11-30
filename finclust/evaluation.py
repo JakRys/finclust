@@ -35,7 +35,7 @@ class QuantstatsEvaluator(Evaluator):
     def __init__(self, benchmark=None, rf=0., display=False,
             mode='basic', sep=False, compounded=True,
             periods_per_year=252, prepare_returns=True,
-            match_dates=False, kwargs = {}):
+            match_dates=False, **kwargs):
         self.benchmark = benchmark
         self.rf = rf
         self.display = display
