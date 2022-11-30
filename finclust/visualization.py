@@ -70,6 +70,10 @@ class CumulativeReturnsVisualizator(Visualizator):
         self.title = title
         self.include_baseline = include_baseline
         self.kwargs = kwargs
+        if (self.plotting_backend is None or self.plotting_backend == "matplotlib") and ("ylabel" not in self.kwargs.keys()):
+            self.kwargs["ylabel"] = "Cumulative return"
+        if (self.plotting_backend == "plotly") and ("labels" not in self.kwargs.keys()):
+            self.kwargs["labels"] = {"value": "Cumulative return"}
 
     def visualize(self, mgr: PortfolioManager):
         """
