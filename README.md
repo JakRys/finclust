@@ -1,6 +1,7 @@
 # FinClust
 
 [![Open Source? Yes!](https://badgen.net/badge/Open%20Source%20%3F/Yes%21/blue?icon=github)](https://github.com/Naereen/badges/)
+[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](LICENSE)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![CodeFactor](https://www.codefactor.io/repository/github/jakrys/finclust/badge)](https://www.codefactor.io/repository/github/jakrys/finclust)
 
@@ -85,7 +86,9 @@ See the [examples folder](examples) for more details.
 
 
 ## License
-TBA
+[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](LICENSE)
+
+This package is licensed under the [MIT license](LICENSE), so it is open source.
 
 ## Disclaimer
 This library was created as part of my master's thesis.
