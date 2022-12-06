@@ -93,11 +93,6 @@ class PortfolioManager:
         self.portfolios_metrics = None
     
 
-    # def __copy__(self):
-    #     warnings.warn("The __copy__ method is not implemented. Instead, the __deepcopy__ method is used.")
-    #     return self.__deepcopy__()
-    
-
     def copy(self):
         instance = PortfolioManager(
             price_column_name = self.price_column_name,
@@ -118,13 +113,6 @@ class PortfolioManager:
             evaluate_baseline = self.evaluate_baseline,
             verbose = self.verbose,
         )
-        # instance.data = self.data.copy()
-        # instance.output_index = self.output_index.copy()
-        # instance.affinities = self.affinities.copy()
-        # instance.clusters = self.clusters.copy()
-        # instance.baseline_returns = self.baseline_returns.copy()
-        # instance.baseline_metrics = self.baseline_metrics.copy()
-        # instance.portfolios_metrics = self.portfolios_metrics.copy()
         instance.data = copy.deepcopy(self.data)
         instance.output_index = copy.deepcopy(self.output_index)
         instance.att_affinities = copy.deepcopy(self.att_affinities)
