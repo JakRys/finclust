@@ -286,10 +286,6 @@ class PortfolioManager:
                 index = self.output_index,
             )
         
-        if self.returns is not None:
-            ## Find the beginning of returns
-            new_begin = self.returns[:self.returns.index[0] + self.window].index[-2]
-
         if self.evaluate_baseline:
             ## Calculate baseline returns
             self._log("Evaluating baseline")
@@ -303,6 +299,7 @@ class PortfolioManager:
             if isinstance(self.baseline_returns, pd.Series):
                 self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
             ## Align baseline returns by portfolios
+            new_begin = self.returns[:self.returns.index[0] + self.window].index[-1]
             self.baseline_returns = self.baseline_returns[new_begin:]
             ## Set initial returns to 0
             self.baseline_returns.iloc[0, :] = 0
@@ -317,11 +314,6 @@ class PortfolioManager:
                 name = self.clusterer.name
                 col_name = f"{name}-{label}" if name != "" else label
                 self.portfolios_returns[col_name] = self._get_portfolio_returns(clusters=self.clusters, label=label, weights=self.asset_weights)
-
-            ## Cutting off the nan-values at the beginning
-            self.portfolios_returns = self.portfolios_returns[new_begin:]
-            ## Set initial returns to 0
-            self.portfolios_returns.iloc[0, :] = [0] * self.portfolios_returns.shape[1]
 
         if self.evaluator is not None:
             ## Evaluate clusters
