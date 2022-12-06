@@ -56,6 +56,7 @@ class PortfolioManager:
                  evaluator: Evaluator = None,
 
                  returns: pd.DataFrame = None,
+                 asset_weights: pd.DataFrame = None,
                  baseline_prices: pd.DataFrame = None,
                  baseline_name: str = "Baseline",
                  
@@ -74,6 +75,7 @@ class PortfolioManager:
         self.evaluator = evaluator
 
         self.returns = returns
+        self.asset_weights = asset_weights
         self.baseline_prices = baseline_prices
         self.baseline_name = baseline_name
 
@@ -167,17 +169,44 @@ class PortfolioManager:
             prices = data        
         else:
             prices = data[self.price_column_name]
-        returns = prices.pct_change().replace([np.inf, -np.inf], 0)
+        returns = prices.pct_change().replace([np.inf, -np.inf], 0).fillna(0)
         if self.max_return_limit is not None:
             returns[returns > self.max_return_limit] = self.max_return_limit
         return returns
     
 
-    def _get_portfolio_returns(self, clusters, label: int) -> pd.Series:
-        equality = (clusters == label)
-        return (self.returns.where(equality, 0).sum(axis=1) / equality.sum(axis=1))
-
-
+    def _get_portfolio_returns(self, clusters, label: int, weights: Union[pd.Series, pd.DataFrame, Dict[str, float]] = None) -> pd.Series:
+        returns = self._calculate_returns(self.data)
+        if weights is None:
+            weights = pd.Series(1, index=clusters.columns)
+        elif isinstance(weights, Dict):
+            weights = pd.Series(weights)
+        
+        periods = [(start, stop) for start,stop in zip(clusters.index[:-1], clusters.index[1:])]
+        ## We add last period, which is shorter than others
+        if clusters.index[-1] != returns.index[-1]:
+            periods.append((clusters.index[-1], returns.index[-1]))
+        
+        portfolio_return = pd.Series(0, index=[periods[0][0]])
+        for start,stop in periods:
+            ## Get assets for selected period
+            assets = clusters.loc[start][clusters.loc[start] == label].index
+            cum_return = returns.loc[start:stop, assets].add(1).cumprod()
+            ## Select appropriate weights and normalize them 
+            if isinstance(weights, pd.DataFrame):
+                w = weights.loc[start]
+            else:
+                w = weights[assets]
+            ## Normalize the weights to sum to one
+            w /= w.sum()
+            ## Calculate cumulative return of the portfolio
+            portfolio_value = cum_return.mul(w).sum(axis=1)
+            ## Get portfolio returns from its cumulative returns
+            portfolio_value = portfolio_value.div(portfolio_value.shift(1)).sub(1)
+            portfolio_return = pd.concat([portfolio_return, portfolio_value.iloc[1:]])
+        return portfolio_return
+        
+    
     def _calculate_metrics(self, returns: pd.DataFrame) -> pd.DataFrame:
         metrics = pd.concat(
                 [self.evaluator.evaluate(returns.loc[:, col]) for col in returns.columns],
@@ -259,11 +288,9 @@ class PortfolioManager:
             else:
                 clusters = [self.clusterer.group(self.data.loc[start:stop]) for start,stop in zip(starts, self.output_index)]
             self.clusters = pd.DataFrame(
-                index = self.returns.index,
-            ).join(pd.DataFrame(
                 clusters,
                 index = self.output_index,
-            )).fillna(method="ffill").dropna(axis=0).astype(np.int16)
+            )
         
         if self.returns is not None:
             ## Find the beginning of returns
@@ -275,14 +302,16 @@ class PortfolioManager:
             if self.baseline_prices is not None:
                 self.baseline_returns = self._calculate_returns(self.baseline_prices)
             else:
-                ones = (~self.returns.isna()).astype(int)
+                ## Baseline simulation using Buy&Hold strategy of all assets
+                tmp_index = [self.returns.index[0], self.returns.index[-1]]
+                ones = pd.DataFrame(1, index=tmp_index, columns=self.returns.columns)
                 self.baseline_returns = self._get_portfolio_returns(clusters=ones, label=1)
             if isinstance(self.baseline_returns, pd.Series):
                 self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
             ## Align baseline returns by portfolios
             self.baseline_returns = self.baseline_returns[new_begin:]
             ## Set initial returns to 0
-            self.baseline_returns.iloc[0, :] = [0] * self.baseline_returns.shape[1]
+            self.baseline_returns.iloc[0, :] = 0
             if (self.evaluator is not None) and (self.baseline_returns is not None) and self.baseline_metrics.empty:
                 ## Evaluate baseline
                 self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
@@ -291,8 +320,9 @@ class PortfolioManager:
             self._log("Calculating returns of portfolios")
             self.portfolios_returns = pd.DataFrame()
             for label in np.unique(self.clusters):
-                col = self.clusterer.name
-                self.portfolios_returns[f"{col}-{label}"] = self._get_portfolio_returns(clusters=self.clusters, label=label)
+                name = self.clusterer.name
+                col_name = f"{name}-{label}" if name != "" else label
+                self.portfolios_returns[col_name] = self._get_portfolio_returns(clusters=self.clusters, label=label, weights=self.asset_weights)
 
             ## Cutting off the nan-values at the beginning
             self.portfolios_returns = self.portfolios_returns[new_begin:]
