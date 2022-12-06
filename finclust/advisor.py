@@ -262,6 +262,12 @@ class PortfolioManager:
                 end = self.data.index[-1],
                 freq = self.step,
             )
+        ## Correct dates to existing in the data
+        self.output_index = pd.DatetimeIndex([
+            (d if d in self.data.index else self.data.loc[self.data.index < d].index[-1]) for d in self.output_index
+        ])
+        self.output_index = self.output_index.drop_duplicates()
+        
         starts = self.output_index - self.window
         
         if (self.affinity_func is not None) and (self.att_affinities is None):
