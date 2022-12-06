@@ -142,6 +142,17 @@ class PortfolioManager:
         need_data = any([p is not None for p in [self.pipeline, self.affinity_func, self.clusterer]])
         if need_data and (self.data is None):
             raise ValueError("Data has to be provided.")
+        
+        if self.asset_weights is not None:
+            all_positive = True
+            if isinstance(self.asset_weights, Dict):
+                all_positive = all(v >= 0 for v in self.asset_weights.values())
+            elif isinstance(self.asset_weights, pd.DataFrame) or isinstance(self.asset_weights, pd.Series):
+                all_positive = self.asset_weights.ge(0).all().all()
+            elif isinstance(self.asset_weights, List):
+                all_positive = all(v >= 0 for v in self.asset_weights)
+            if not all_positive:
+                raise ValueError("Asset weights must not be negative.")
 
 
     def _calculate_returns(self, data: Union[pd.DataFrame, pd.Series]) -> pd.DataFrame:
