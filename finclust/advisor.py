@@ -90,6 +90,7 @@ class PortfolioManager:
         self.clusters = None
         self.baseline_returns = None
         self.baseline_metrics = pd.DataFrame()
+        self.portfolios_returns = None
         self.portfolios_metrics = None
     
 
@@ -121,6 +122,7 @@ class PortfolioManager:
         instance.clusters = copy.deepcopy(self.clusters)
         instance.baseline_returns = copy.deepcopy(self.baseline_returns)
         instance.baseline_metrics = copy.deepcopy(self.baseline_metrics)
+        instance.portfolios_returns = copy.deepcopy(self.portfolios_returns)
         instance.portfolios_metrics = copy.deepcopy(self.portfolios_metrics)
         return instance
         
@@ -297,29 +299,6 @@ class PortfolioManager:
                 clusters,
                 index = self.output_index,
             )
-        
-        if self.evaluate_baseline:
-            ## Calculate baseline returns
-            self._log("Evaluating baseline")
-            if self.baseline_prices is not None:
-                self.baseline_returns = self._calculate_returns(self.baseline_prices)
-            else:
-                ## Baseline simulation using Buy&Hold strategy of all assets
-                tmp_index = [self.returns.index[0], self.returns.index[-1]]
-                ones = pd.DataFrame(1, index=tmp_index, columns=self.returns.columns)
-                self.baseline_returns = self._get_portfolio_returns(clusters=ones, label=1)
-            if isinstance(self.baseline_returns, pd.Series):
-                self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
-            ## Align baseline returns by portfolios
-            new_begin = self.returns[:self.returns.index[0] + self.window].index[-1]
-            self.baseline_returns = self.baseline_returns[new_begin:]
-            ## Set initial returns to 0
-            self.baseline_returns.iloc[0, :] = 0
-            if (self.evaluator is not None) and (self.baseline_returns is not None) and self.baseline_metrics.empty:
-                ## Evaluate baseline
-                self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
-
-        if self.clusters is not None:
             self._log("Calculating returns of portfolios")
             self.portfolios_returns = pd.DataFrame()
             for label in np.unique(self.clusters):
@@ -328,7 +307,27 @@ class PortfolioManager:
                 self.portfolios_returns[col_name] = self._get_portfolio_returns(clusters=self.clusters, label=label, weights=self.asset_weights)
 
         if self.evaluator is not None:
-            ## Evaluate clusters
+            if self.evaluate_baseline:
+                ## Calculate baseline returns
+                self._log("Evaluating baseline")
+                if self.baseline_prices is not None:
+                    self.baseline_returns = self._calculate_returns(self.baseline_prices)
+                else:
+                    ## Baseline simulation using Buy&Hold strategy of all assets
+                    tmp_index = [self.returns.index[0], self.returns.index[-1]]
+                    ones = pd.DataFrame(1, index=tmp_index, columns=self.returns.columns)
+                    self.baseline_returns = self._get_portfolio_returns(clusters=ones, label=1)
+                if isinstance(self.baseline_returns, pd.Series):
+                    self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
+                ## Align baseline returns by portfolios
+                new_begin = self.returns[:self.returns.index[0] + self.window].index[-1]
+                self.baseline_returns = self.baseline_returns[new_begin:]
+                ## Set initial returns to 0
+                self.baseline_returns.iloc[0, :] = 0
+                if (self.evaluator is not None) and (self.baseline_returns is not None) and self.baseline_metrics.empty:
+                    ## Evaluate baseline
+                    self.baseline_metrics = self._calculate_metrics(returns=self.baseline_returns)
+
             self._log("Evaluating cluster portfolios")
             
             self.portfolios_metrics = self._calculate_metrics(returns=self.portfolios_returns)
