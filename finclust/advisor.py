@@ -107,6 +107,7 @@ class PortfolioManager:
             evaluator = self.evaluator,
 
             returns = self.returns,
+            asset_weights = self.asset_weights,
             baseline_prices = self.baseline_prices,
             baseline_name = self.baseline_name,
 
@@ -281,7 +282,7 @@ class PortfolioManager:
             if self.data.columns.nlevels > 1 and len(self.data.columns.levels[0]) > 1:
                 ## Compose affinities
                 self._log("Composing affinities")
-                self.affinities = [compose_affinities(s) for s in self.att_affinities]
+                self.affinities = [compose_affinities(s, self.weights) for s in self.att_affinities]
             else:
                 self.affinities = self.att_affinities
 
