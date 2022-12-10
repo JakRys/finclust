@@ -321,7 +321,8 @@ class PortfolioManager:
                     self.baseline_returns = self.baseline_returns.to_frame(name=self.baseline_name)
                 ## Align baseline returns by portfolios
                 new_begin = self.returns[:self.returns.index[0] + self.window].index[-1]
-                self.baseline_returns = self.baseline_returns[new_begin:]
+                new_end = self.returns.index[-1]
+                self.baseline_returns = self.baseline_returns[new_begin:new_end]
                 ## Set initial returns to 0
                 self.baseline_returns.iloc[0, :] = 0
                 if (self.evaluator is not None) and (self.baseline_returns is not None) and self.baseline_metrics.empty:
