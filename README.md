@@ -91,7 +91,7 @@ See the [examples folder](examples) for more details.
 This package is licensed under the [MIT license](LICENSE), so it is open source.
 
 ## Disclaimer
-This library was created as part of my master's thesis.
+This library was created as part of [my master's thesis](https://is.muni.cz/th/xc3yt/).
 
 The structure is heavily inspired by the [SeqRep package](https://github.com/MIR-MU/seqrep) (my earlier project), which is designed for supervised learning.
 
@@ -110,8 +110,8 @@ First of all, I would like to thank Petr Sojka for supervising my thesis. I am g
   supervisor = {Petr Sojka},
   year    = {2022},
   type    = {Master's thesis},
-  url     = {},
-  url_date = {},
+  url     = {https://is.muni.cz/th/xc3yt/},
+  url_date = {2022-12-13},
 }
 ```
 
