@@ -45,13 +45,6 @@ The framework is designed for **easy customization** and extension of its functi
 ```bash
 python -m pip install git+https://github.com/JakRys/finclust
 ```
-or (not yet available):
-```bash
-pip install finclust
-```
-
-## Features
-See the `README` in the [finclust folder](finclust).
 
 
 ## Usage
@@ -106,18 +99,17 @@ First of all, I would like to thank Petr Sojka for supervising my thesis. I am g
 ## How to cite
 ```
 @mastersthesis{Rysavy2022thesis,
-  author  = {Ryšavý, Jakub},
-  title   = {Machine Learning for Algorithmic Trading of Decentralized Finances},
-  school  = {Masarykova univerzita, Fakulta informatiky},
-  location = {Brno},
-  supervisor = {Petr Sojka},
-  year    = {2022},
-  type    = {Master's thesis},
-  url     = {https://is.muni.cz/th/xc3yt/},
-  url_date = {2022-12-13},
+  AUTHOR = {Ryšavý, Jakub},
+  TITLE = {Machine Learning for Algorithmic Trading of Decentralized Finances},
+  YEAR = {2022},
+  TYPE = {Master's thesis},
+  INSTITUTION = {Masaryk University, Faculty of Informatics},
+  LOCATION = {Brno},
+  SUPERVISOR = {Petr Sojka},
+  URL = {https://is.muni.cz/th/xc3yt/},
+  URL_DATE = {2022-12-13},
 }
 ```
-
 
 
 [![](https://img.shields.io/badge/back%20to%20top-%E2%86%A9-blue)](#finclust)
