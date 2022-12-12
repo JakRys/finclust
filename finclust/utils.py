@@ -10,6 +10,24 @@ import pandas as pd
 
 
 def calculate_affinities(data: pd.DataFrame, func: Callable, fillna_value: float = 0) -> pd.DataFrame:
+    """
+    Calculates affinities between columns of data.
+    
+    Parameters
+    ----------
+    data: pd.DataFrame
+        Data with samples in columns.
+
+    func: Callable
+        Function calculating pairwise affinities.
+
+    fillna_value: float=0
+        Value for replacing nan.
+    
+    Returns
+    -------
+        A dataframe of affinities between all columns in the input dataframe
+    """
     if data.columns.nlevels > 1:
         affinities = pd.DataFrame(columns=data.columns)
         for col in data.columns.levels[0]:
@@ -28,7 +46,14 @@ def compose_affinities(affinities: pd.DataFrame, weights: Union[List[float], Dic
 
     Parameters
     ----------
-    TODO:
+    affinities: pd.DataFrame
+        Table of affinities.
+    
+    weights: Union[List[float], Dict[str, float]], default None
+        Coefficients for weighted sum.
+
+    normalize: bool, default True
+        If weights should be normalized.
 
     Returns
     -------
@@ -40,7 +65,6 @@ def compose_affinities(affinities: pd.DataFrame, weights: Union[List[float], Dic
     columns = affinities.columns.levels[0]
     if isinstance(weights, List):
         weights = {c: v for c, v in zip(columns, weights)}
-    # composed = affinities.multiply(weights, axis="columns")
     composed = affinities.copy()
     if weights is not None:
         for c, v in weights.items():
