@@ -4,6 +4,9 @@
 [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](LICENSE)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
 [![CodeFactor](https://www.codefactor.io/repository/github/jakrys/finclust/badge)](https://www.codefactor.io/repository/github/jakrys/finclust)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JakRys/finclust/blob/main/examples/simple_example.ipynb)
+
+
 
 _Library for portfolio creation (by clustering) of financial time series with evaluation and visualizations._
 
@@ -82,7 +85,7 @@ mgr = PortfolioManager(
 ## Run the process
 mgr.run(data=data)
 ```
-See the [examples folder](examples) for more details.
+See the [examples folder](examples) for more details or [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/JakRys/finclust/blob/main/examples/simple_example.ipynb).
 
 
 ## License
