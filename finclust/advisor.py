@@ -46,7 +46,7 @@ class PortfolioManager:
     def __init__(self,
                  price_column_name: str = "Close",
                  weights: Dict[str, float] = None,
-                 window: timedelta = None,
+                 window: timedelta = timedelta(days=1),
                  step: timedelta = None,
                  max_return_limit: float = None,
                  
@@ -206,7 +206,7 @@ class PortfolioManager:
             ## Get portfolio returns from its cumulative returns
             portfolio_value = portfolio_value.div(portfolio_value.shift(1)).sub(1)
             portfolio_return = pd.concat([portfolio_return, portfolio_value.iloc[1:]])
-        return portfolio_return
+        return portfolio_return.fillna(0)
         
     
     def _calculate_metrics(self, returns: pd.DataFrame) -> pd.DataFrame:
