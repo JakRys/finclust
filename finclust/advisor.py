@@ -26,7 +26,7 @@ class PortfolioManager:
     Parameters
     ----------
     pipeline: Pipeline, optional
-        Pipeline object.
+        Sklearn Pipeline object.
 
     price_column_name: str, default "Close"
         Name of the column with the price values.
@@ -36,11 +36,35 @@ class PortfolioManager:
 
     Attributes
     ----------
+    data: pd.DataFrame
+        Input data containing asset prices and possibly other features
+
     returns: pd.DataFrame
-        Percentage returns on the asset.
+        Percentage returns of the assets
+
+    output_index: pd.date_range
+        Time index of rebalancing dates
     
-    affinities: List[pd.DataFrame]
-        Square matrix of pairwise affinities or distances.
+    att_affinities: pd.DataFrame
+        Square matrices of pairwise affinities or distances of each feature
+
+    affinities: pd.DataFrame
+        Square matrix of pairwise affinities or distances
+
+    clusters: pd.DataFrame
+        Assignment of asset clusters over time
+    
+    baseline_returns: pd.DataFrame
+        Time series of baseline returns
+
+    baseline_metrics: pd.DataFrame
+        Portfolio metrics of baseline
+
+    portfolios_returns: pd.DataFrame
+        Returns of portfolios
+    
+    portfolios_metrics: pd.DataFrame
+        Portfolio metrics of portfolios
     """
 
     def __init__(self,
@@ -95,6 +119,13 @@ class PortfolioManager:
     
 
     def copy(self):
+        """
+        The copy function is a helper function that creates an instance of the PortfolioManager class with all of the same attributes as the original.
+        
+        Returns
+        -------
+            A new instance of the PortfolioManager class with all of its attributes set to the same values as those in the calling instance.
+        """
         instance = PortfolioManager(
             price_column_name = self.price_column_name,
             weights = self.weights,
@@ -142,6 +173,14 @@ class PortfolioManager:
     
 
     def _check_params(self) -> None:
+        """
+        Function to check parameters to prevent nonsensical running
+
+        Raises
+        ------
+        ValueError
+            If any of the parameters are entered incorrectly or are not entered although they are required.
+        """
         need_data = any([p is not None for p in [self.pipeline, self.affinity_func, self.clusterer]])
         if need_data and (self.data is None):
             raise ValueError("Data has to be provided.")
@@ -177,8 +216,26 @@ class PortfolioManager:
         return returns
     
 
-    def _get_portfolio_returns(self, clusters, label: int, weights: Union[pd.Series, pd.DataFrame, Dict[str, float]] = None) -> pd.Series:
-        returns = self._calculate_returns(self.data)
+    def _get_portfolio_returns(self, clusters: pd.DataFrame, label: int, weights: Union[pd.Series, pd.DataFrame, Dict[str, float]] = None) -> pd.Series:
+        """
+        Calculates the return of a portfolio according to its composition and frequency of rebalancing.
+        
+        Parameters
+        ----------
+        clusters: pd.DataFrame
+            Select the assets that belong to a given cluster
+        
+        label: int
+            Select the label of the cluster we want to calculate returns for
+        
+        weights: Union[pd.Series, pd.DataFrame, Dict[str, float]], default None
+            Weights for each asset in the portfolio
+        
+        Returns
+        -------
+            A time series of portfolio returns
+        """
+        returns = self.returns
         if weights is None:
             weights = pd.Series(1, index=clusters.columns)
         elif isinstance(weights, Dict):
@@ -210,6 +267,18 @@ class PortfolioManager:
         
     
     def _calculate_metrics(self, returns: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculates the metrics for entered portfolio returns.
+        
+        Parameters
+        ----------
+        returns: pd.DataFrame
+            Returns of portfolio
+        
+        Returns
+        -------
+            A dataframe with the portfolio metrics
+        """
         metrics = pd.concat(
                 [self.evaluator.evaluate(returns.loc[:, col]) for col in returns.columns],
                 axis="columns"
@@ -224,12 +293,12 @@ class PortfolioManager:
         
         Parameters
         ----------
-        data : array-like
+        data : pd.DataFrame, default None
             Data to run the manager.
         
         Returns
         -------
-        TODO
+            A dataframe with the portfolio metrics or None
         """
         start_time = datetime.now()
         
