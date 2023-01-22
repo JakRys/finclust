@@ -1,11 +1,6 @@
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.realpath('__file__')), '.')))
-
 import pytest
 import pandas as pd
-from finclust.utils import *
+from finclust.utils import calculate_affinities, compose_affinities
 
 from sklearn.metrics.pairwise import cosine_similarity
 
